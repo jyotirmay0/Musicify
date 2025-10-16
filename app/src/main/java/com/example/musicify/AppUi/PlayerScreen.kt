@@ -57,6 +57,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import com.example.musicify.models.Result
 import com.example.musicify.viewmodel.PlayerViewModel
 
@@ -65,8 +66,7 @@ import com.example.musicify.viewmodel.PlayerViewModel
 fun PlayerScreen(
     song: Result?,
 
-    onPlayPauseClick: () -> Unit,
-    onBackClick: () -> Unit,
+    navController: NavController,
     viewModel: PlayerViewModel
 ) {
     if (song == null) return
@@ -81,7 +81,7 @@ fun PlayerScreen(
             TopAppBar(
                 title = { },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) {
+                    IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Default.KeyboardArrowDown, "Back")
                     }
                 },
@@ -196,7 +196,7 @@ fun PlayerScreen(
                         )
                     }
 
-                    IconButton(onClick = { /* Previous */ }) {
+                    IconButton(onClick = { viewModel.playPreviousSong() }) {
                         Icon(
                             Icons.Default.SkipPrevious,
                             contentDescription = "Previous",
@@ -207,7 +207,7 @@ fun PlayerScreen(
 
                     // Play/Pause Button
                     FloatingActionButton(
-                        onClick = onPlayPauseClick,
+                        onClick = {viewModel.playPause()},
                         containerColor = MusicColors.primary,
                         modifier = Modifier.size(72.dp)
                     ) {
@@ -219,7 +219,7 @@ fun PlayerScreen(
                         )
                     }
 
-                    IconButton(onClick = { /* Next */ }) {
+                    IconButton(onClick = { viewModel.playNextSong()}) {
                         Icon(
                             Icons.Default.SkipNext,
                             contentDescription = "Next",
@@ -275,9 +275,6 @@ fun formatTime(seconds: Float): String {
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun prev(){
-    AlbumsScreen(
-        onBackClick = {  },
-        onAlbumClick = {  }
-    )
+
 
 }

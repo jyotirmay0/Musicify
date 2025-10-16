@@ -62,15 +62,17 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.example.musicify.models.Album
 import com.example.musicify.models.Result
+import com.example.musicify.navigation.Routes
+import com.example.musicify.viewmodel.PlayerViewModel
 
 // 3. Albums Screen
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AlbumsScreen(
-    onBackClick: () -> Unit,
-    onAlbumClick: (Album) -> Unit
+    navController: NavController
 ) {
     // Sample albums data
     val albums = remember {
@@ -89,7 +91,7 @@ fun AlbumsScreen(
             TopAppBar(
                 title = { Text("Albums", fontWeight = FontWeight.Bold, fontSize = 24.sp) },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) {
+                    IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Default.ArrowBack, "Back")
                     }
                 },
@@ -110,7 +112,7 @@ fun AlbumsScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             items(albums) { album ->
-                AlbumCard(album = album, onClick = { onAlbumClick(album) })
+                AlbumCard(album = album, onClick = {  navController.navigate(Routes.Browse)  })
             }
         }
     }
@@ -169,89 +171,7 @@ fun AlbumCard(album: Album, onClick: () -> Unit) {
 }
 
 // Mini Player Component
-@Composable
-fun MiniPlayer(
-    song: Result,
-    isPlaying: Boolean,
-    onPlayPauseClick: () -> Unit,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Surface(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(64.dp)
-            .clickable(onClick = onClick),
-        color = MusicColors.surface,
-        tonalElevation = 8.dp
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Album Art
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(RoundedCornerShape(6.dp))
-                    .background(MusicColors.secondary),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    Icons.Default.MusicNote,
-                    contentDescription = null,
-                    tint = MusicColors.textSecondary,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
 
-            // Song Info
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(2.dp)
-            ) {
-                Text(
-                    text = song.name,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = MusicColors.textPrimary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = song.artist_name,
-                    fontSize = 12.sp,
-                    color = MusicColors.textSecondary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-
-            // Play/Pause Button
-            IconButton(onClick = onPlayPauseClick) {
-                Icon(
-                    if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                    contentDescription = if (isPlaying) "Pause" else "Play",
-                    tint = MusicColors.textPrimary,
-                    modifier = Modifier.size(28.dp)
-                )
-            }
-
-            // Next Button
-            IconButton(onClick = { /* Next */ }) {
-                Icon(
-                    Icons.Default.SkipNext,
-                    contentDescription = "Next",
-                    tint = MusicColors.textPrimary,
-                    modifier = Modifier.size(28.dp)
-                )
-            }
-        }
-    }
-}
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun prevf(){

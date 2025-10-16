@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Album
@@ -40,37 +41,27 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.example.musicify.models.Result
+import com.example.musicify.navigation.Routes
+
 
 import com.example.musicify.viewmodel.PlayerViewModel
+import com.google.common.collect.Multimaps.index
 
 // 1. Browse Songs Screen
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BrowseSongsScreen(
-    onSongClick: (Result) -> Unit,
-    onNavigateToAlbums: () -> Unit,
-    viewModel: PlayerViewModel
+    viewModel: PlayerViewModel,
+    navController: NavController
 ) {
-
     val songs by viewModel.songs.collectAsState()
 
     LaunchedEffect(Unit) {
         viewModel.loadSongs()
     }
-    // Sample data (replace with API call)
- //   val song = remember {
-//        listOf(
-//            Song("1", "Blinding Lights", "The Weeknd", "After Hours", "3:20", "", ""),
-//            Song("2", "Shape of You", "Ed Sheeran", "÷", "3:53", "", ""),
-//            Song("3", "Someone Like You", "Adele", "21", "4:45", "", ""),
-//            Song("4", "Bad Guy", "Billie Eilish", "When We All Fall Asleep", "3:14", "", ""),
-//            Song("5", "Levitating", "Dua Lipa", "Future Nostalgia", "3:23", "", ""),
-//            Song("6", "Watermelon Sugar", "Harry Styles", "Fine Line", "2:54", "", ""),
-//            Song("7", "Circles", "Post Malone", "Hollywood's Bleeding", "3:35", "", ""),
-//            Song("8", "Dance Monkey", "Tones and I", "The Kids Are Coming", "3:29", "", ""),
-//        )
-   // }
 
     Scaffold(
         topBar = {
@@ -105,29 +96,46 @@ fun BrowseSongsScreen(
                     selected = true,
                     onClick = { },
                     label = { Text("Songs") },
-                    leadingIcon = { Icon(Icons.Default.MusicNote, null, modifier = Modifier.size(18.dp)) }
+                    leadingIcon = {
+                        Icon(
+                            Icons.Default.MusicNote,
+                            null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
                 )
                 FilterChip(
                     selected = false,
-                    onClick = onNavigateToAlbums,
+                    onClick = { navController.navigate(Routes.Albums) },
                     label = { Text("Albums") },
-                    leadingIcon = { Icon(Icons.Default.Album, null, modifier = Modifier.size(18.dp)) }
+                    leadingIcon = {
+                        Icon(
+                            Icons.Default.Album,
+                            null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
                 )
             }
 
-            // Songs List
+            // Songs List with bottom padding for MiniPlayer
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(bottom = 80.dp)
+                contentPadding = PaddingValues(bottom = 80.dp) // Space for MiniPlayer
             ) {
-                items(songs) { song ->
+                itemsIndexed(songs) { index, song ->
                     SongItem(
                         song = song,
-                        onClick = { onSongClick(song) }
+                        onClick = {
+                            viewModel.setCurrentSong(index, song)
+                            navController.navigate(Routes.Player)
+                        }
                     )
                 }
             }
         }
+
+        // ❌ REMOVE MiniPlayer from here - it's now at app level!
     }
 }
 

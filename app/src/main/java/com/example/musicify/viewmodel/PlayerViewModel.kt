@@ -21,7 +21,10 @@ class PlayerViewModel @Inject constructor(
     private val controllerFuture: ListenableFuture<MediaController>,
     private val repository: MusicRepository
 ) : ViewModel() {
-
+    private val _currentSongIndex = MutableStateFlow(-1)
+    val currentSongIndex = _currentSongIndex.asStateFlow()
+    private val _songs = MutableStateFlow<List<Result>>(emptyList())
+    val songs = _songs.asStateFlow()
     private var controller: MediaController? = null
     private var queuedMediaItem: MediaItem? = null
 
@@ -34,6 +37,8 @@ class PlayerViewModel @Inject constructor(
 
     private val _isBuffering = MutableStateFlow(false)
     val isBuffering = _isBuffering.asStateFlow()
+    private val _songEnded = MutableStateFlow(false)
+    val songEnded = _songEnded.asStateFlow()
 
     private val _controllerReady = MutableStateFlow(false)
     val controllerReady = _controllerReady.asStateFlow()
@@ -56,7 +61,10 @@ class PlayerViewModel @Inject constructor(
         controller?.addListener(object : Player.Listener {
             override fun onPlaybackStateChanged(state: Int) {
                 _isBuffering.value = state == Player.STATE_BUFFERING
-                if (state == Player.STATE_ENDED) _isPlaying.value = false
+                if (state == Player.STATE_ENDED){
+                    _isPlaying.value = false
+                    playNextSong()
+                }
             }
 
             override fun onIsPlayingChanged(isPlayingNow: Boolean) {
@@ -68,6 +76,7 @@ class PlayerViewModel @Inject constructor(
             }
         })
     }
+
 
     // Play by URI + title
     fun playSong(uri: String, title: String) {
@@ -98,9 +107,7 @@ class PlayerViewModel @Inject constructor(
         }
     }
 
-    fun nextSong() {
-        controller?.seekToNextMediaItem()
-    }
+
 
     override fun onCleared() {
         controller?.release()
@@ -110,8 +117,7 @@ class PlayerViewModel @Inject constructor(
 
 
 
-    private val _songs = MutableStateFlow<List<Result>>(emptyList())
-    val songs = _songs.asStateFlow()
+
     private var hasLoadedSongs = false
     fun loadSongs() {
         if (hasLoadedSongs) return   //  Skip if already fetched
@@ -133,9 +139,33 @@ class PlayerViewModel @Inject constructor(
     private val _currentSong = MutableStateFlow<Result?>(null)
     val currentSong = _currentSong.asStateFlow()
 
-    fun setCurrentSong(song: Result) {
+
+    fun setCurrentSongIndex(index: Int) {
+        _currentSongIndex.value = index
+    }
+    fun setCurrentSong(index: Int, song: Result) {
         _currentSong.value = song
-        playSong(uri = song.audio, title = song.name) // play immediately
+        playSong(uri = song.audio, title = song.name)// play immediately
+        setCurrentSongIndex(index)
+
+    }
+    fun playNextSong() {
+        val nextIndex = _currentSongIndex.value + 1
+        val songList = _songs.value
+        if (nextIndex < songList.size) {
+            val nextSong = songList[nextIndex]
+            setCurrentSong(nextIndex, nextSong)
+
+        }
     }
 
+    fun playPreviousSong() {
+
+        val prevIndex = _currentSongIndex.value - 1
+        val songList = _songs.value
+        if (prevIndex >= 0) {
+            val prevSong = songList[prevIndex]
+            setCurrentSong(prevIndex, prevSong)
+        }
+    }
 }

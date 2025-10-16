@@ -66,6 +66,7 @@ class MainActivity : ComponentActivity() {
     override fun onDestroy() {
         super.onDestroy()
         stopService(Intent(this, MusicService::class.java))
+
     }
 }
 

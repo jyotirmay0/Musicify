@@ -2,57 +2,52 @@ package com.example.musicify.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavHostController
+import androidx.compose.runtime.getValue
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.example.musicify.AppUi.AlbumsScreen
 import com.example.musicify.AppUi.BrowseSongsScreen
 import com.example.musicify.AppUi.PlayerScreen
 import com.example.musicify.viewmodel.PlayerViewModel
 
-sealed class Screen(val route: String) {
-    object Browse : Screen("browse")
-    object Albums : Screen("albums")
-    object Player : Screen("player/{songId}") {
-        fun createRoute(songId: String) = "player/$songId"
-    }
+object Routes {
+    const val Browse = "browse"
+    const val Albums = "albums"
+    const val Player = "player"
 }
 
 @Composable
-fun AppNavGraph(navController: NavHostController, viewModel: PlayerViewModel = hiltViewModel()) {
-    NavHost(navController = navController, startDestination = Screen.Browse.route) {
+fun AppNavigation(
+    viewModel: PlayerViewModel,
+    navController: androidx.navigation.NavHostController
+) {
 
-        composable(Screen.Browse.route) {
+    NavHost(navController = navController, startDestination = Routes.Browse) {
+
+        // Browse Screen
+        composable(Routes.Browse) {
             BrowseSongsScreen(
                 viewModel = viewModel,
-                onNavigateToAlbums = { navController.navigate(Screen.Albums.route) },
-                onSongClick = { song ->
-                    viewModel.setCurrentSong(song)
-                    navController.navigate(Screen.Player.createRoute(song.id))
-                }
+                navController = navController
             )
         }
 
-        composable(Screen.Albums.route) {
-            AlbumsScreen(
-                onBackClick = { navController.popBackStack() },
-                onAlbumClick = { navController.navigate(Screen.Browse.route) }
-            )
+        // Albums Screen
+        composable(Routes.Albums) {
+            AlbumsScreen(navController = navController)
         }
 
-        composable(Screen.Player.route) { backStackEntry ->
-            val songId = backStackEntry.arguments?.getString("songId")
-            val currentSong = viewModel.currentSong.collectAsState().value
-            if (currentSong != null && currentSong.id == songId) {
-                PlayerScreen(
-                    song = currentSong,
+        // Player Screen - No arguments needed!
+        // Just collect the current song from ViewModel
+        composable(Routes.Player) {
+            val currentSong by viewModel.currentSong.collectAsState()
 
-                    onPlayPauseClick = { viewModel.playPause() },
-                    onBackClick = { navController.popBackStack() },
-                    viewModel = viewModel
-                )
-            }
+            PlayerScreen(
+                song = currentSong, // Pass the song from ViewModel state
+                navController = navController,
+                viewModel = viewModel
+            )
         }
     }
 }
