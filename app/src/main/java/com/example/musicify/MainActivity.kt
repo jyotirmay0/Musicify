@@ -1,8 +1,7 @@
 // ========== MainActivity.kt ==========
 package com.example.musicify
 
-import android.Manifest
-import android.content.ComponentName
+
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
@@ -10,8 +9,7 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.contract.ActivityResultContracts
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -26,28 +24,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.media3.session.MediaController
-import androidx.media3.session.SessionToken
+import com.example.musicify.AppUi.MusicPlayerApp
+import com.example.musicify.viewmodel.PlayerViewModel
 import com.google.common.util.concurrent.MoreExecutors
+import dagger.hilt.android.AndroidEntryPoint
 
+
+
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-
-    private lateinit var permissionLauncher: ActivityResultLauncher<String>
-    private val mediaControllerState = mutableStateOf<MediaController?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Register permission launcher
-        permissionLauncher = registerForActivityResult(
-            ActivityResultContracts.RequestPermission()
-        ) { granted ->
-            if (granted) {
-                onPermissionGranted()
-            }
-        }
-
-        // Start MusicService FIRST
+        // Start MusicService
         val serviceIntent = Intent(this, MusicService::class.java)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             startForegroundService(serviceIntent)
@@ -56,74 +49,26 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            // Initialize MediaController inside Compose
-            val mediaController = rememberMediaController()
+            val playerViewModel: PlayerViewModel = hiltViewModel()
 
-            MusicAppUI(
-                mediaController = mediaController,
-                onPermissionCheck = { checkPermissionAndLoad() }
-            )
-        }
-    }
-
-    @Composable
-    private fun rememberMediaController(): MediaController? {
-        val context = LocalContext.current
-        var controller by remember { mutableStateOf<MediaController?>(null) }
-
-        DisposableEffect(Unit) {
-            val sessionToken = SessionToken(
-                context,
-                ComponentName(context, MusicService::class.java)
-            )
-
-            val controllerFuture = MediaController.Builder(context, sessionToken).buildAsync()
-            controllerFuture.addListener(
-                {
-                    try {
-                        controller = controllerFuture.get()
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                    }
-                },
-                MoreExecutors.directExecutor()
-            )
-
-            onDispose {
-                controller?.release()
+            val controllerReady by playerViewModel.controllerReady.collectAsState()
+            if (controllerReady) {
+                MusicPlayerApp(viewModel = playerViewModel)
+            } else {
+                // Show loading while MediaController initializes
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
             }
         }
-
-        return controller
-    }
-
-    private fun checkPermissionAndLoad() {
-        val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            Manifest.permission.READ_MEDIA_AUDIO
-        } else {
-            Manifest.permission.READ_EXTERNAL_STORAGE
-        }
-
-        when {
-            ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED -> {
-                onPermissionGranted()
-            }
-            else -> {
-                permissionLauncher.launch(permission)
-            }
-        }
-    }
-
-    private fun onPermissionGranted() {
-        // Permission granted - songs will load in Compose
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        // Controller is released in DisposableEffect
         stopService(Intent(this, MusicService::class.java))
     }
 }
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
