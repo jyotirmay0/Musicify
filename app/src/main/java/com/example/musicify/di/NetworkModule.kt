@@ -3,6 +3,9 @@ package com.example.musicify.di
 
 
 
+
+
+import com.example.musicify.BuildConfig
 import com.example.musicify.api.MusicApi
 import dagger.Module
 import dagger.Provides
@@ -17,6 +20,7 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
+
 
     @Provides
     @Singleton

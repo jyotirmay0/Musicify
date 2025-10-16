@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -21,6 +23,14 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+        // Load CLIENT_ID from local.properties safely
+        val properties = Properties()
+        val localFile = project.rootProject.file("local.properties")
+        if (localFile.exists()) {
+            properties.load(localFile.inputStream())
+        }
+        val ClientId = properties.getProperty("CLIENT_ID") ?: ""
+        buildConfigField("String", "CLIENT_ID", "\"$ClientId\"")
     }
 
     buildTypes {
